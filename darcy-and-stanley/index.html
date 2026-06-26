@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#0a0612" />
+<meta name="description" content="Darcy & Stanley — a neon arcade brawler. A gymnast and a footballer fight baddies across city streets, a highway car chase, and deep space." />
+<title>DARCY &amp; STANLEY — Flip. Kick. Survive.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+  <!-- animated background -->
+  <div class="bg">
+    <div class="grid"></div>
+    <div class="sun"></div>
+    <div class="stars"></div>
+    <div class="blob blob-a"></div>
+    <div class="blob blob-b"></div>
+    <div class="scan"></div>
+  </div>
+
+  <nav class="topbar">
+    <div class="logo">D<span>&amp;</span>S</div>
+    <div class="nav-links">
+      <a href="#characters">Heroes</a>
+      <a href="#levels">Levels</a>
+      <a href="#music">Music</a>
+      <a class="btn-mini" href="game.html">Play ▶</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-tag">⚡ ARCADE BRAWLER ⚡</div>
+    <h1 class="title">
+      <span class="word word-d">DARCY</span>
+      <span class="amp">&amp;</span>
+      <span class="word word-s">STANLEY</span>
+    </h1>
+    <p class="subtitle">A gymnast and a footballer. One galaxy of baddies.<br/>Flip, kick, and blast your way through streets, highways, and deep space.</p>
+    <div class="cta-row">
+      <a href="game.html" class="cta">START GAME</a>
+      <button id="previewMusic" class="cta cta-ghost">🎧 Hear the Theme</button>
+    </div>
+    <div class="hint">Tip: turn your sound on — the soundtrack is a vibe.</div>
+  </header>
+
+  <section id="characters" class="section">
+    <h2 class="section-title">MEET THE HEROES</h2>
+    <div class="cards">
+      <article class="card card-darcy">
+        <div class="card-art" id="art-darcy"></div>
+        <h3>DARCY</h3>
+        <div class="role">THE GYMNAST</div>
+        <p>Acrobatic, fearless, and faster than gravity. Darcy launches into spinning aerial cartwheel-kicks that wreck anything in range.</p>
+        <ul class="stats">
+          <li><span>SPEED</span><i style="--v:95%"></i></li>
+          <li><span>AGILITY</span><i style="--v:100%"></i></li>
+          <li><span>POWER</span><i style="--v:70%"></i></li>
+        </ul>
+      </article>
+      <article class="card card-stanley">
+        <div class="card-art" id="art-stanley"></div>
+        <h3>STANLEY</h3>
+        <div class="role">THE FOOTBALLER</div>
+        <p>Golden boot, ice-cold nerve. Stanley fires screaming footballs that bend across the screen and flatten enemies from range.</p>
+        <ul class="stats">
+          <li><span>SPEED</span><i style="--v:75%"></i></li>
+          <li><span>AGILITY</span><i style="--v:65%"></i></li>
+          <li><span>POWER</span><i style="--v:100%"></i></li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section id="levels" class="section">
+    <h2 class="section-title">THE ADVENTURE</h2>
+    <div class="levels">
+      <div class="level lv1">
+        <div class="lv-emoji">🏙️</div>
+        <h4>LEVEL 1 — CITY STREETS</h4>
+        <p>The baddies invade downtown. Brawl through neon alleyways on foot.</p>
+      </div>
+      <div class="level lv2">
+        <div class="lv-emoji">🏎️</div>
+        <h4>LEVEL 2 — HIGHWAY CHASE</h4>
+        <p>Hijack a turbo car and smash the enemy convoy at full speed.</p>
+      </div>
+      <div class="level lv3">
+        <div class="lv-emoji">🚀</div>
+        <h4>LEVEL 3 — DEEP SPACE</h4>
+        <p>Pilot a fighter and dogfight the alien mothership among the stars.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="music" class="section music-sec">
+    <h2 class="section-title">THE SOUND</h2>
+    <p class="music-copy">An original <strong>Oliver-Tree-style</strong> theme — lo-fi swagger, fat distorted bass, off-kilter melody and a head-nod beat. Generated live in your browser with the Web Audio API.</p>
+    <button id="previewMusic2" class="cta">🎧 Play Theme Snippet</button>
+    <div class="eq" id="eq">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <a href="game.html" class="cta cta-big">PLAY DARCY &amp; STANLEY ▶</a>
+    <p>Built with HTML5 Canvas + Web Audio. Use a keyboard or touch controls.</p>
+  </footer>
+
+  <script src="js/music.js"></script>
+  <script>
+    // Landing-page mini character art (canvas) + music preview
+    function drawHero(id, kind){
+      const wrap = document.getElementById(id);
+      const c = document.createElement('canvas');
+      c.width = 220; c.height = 220; c.className='hero-canvas';
+      wrap.appendChild(c);
+      const x = c.getContext('2d');
+      let t = 0;
+      (function loop(){
+        x.clearRect(0,0,220,220);
+        const bob = Math.sin(t/20)*6;
+        if (window.DSChars) window.DSChars.draw(x, 110, 130+bob, kind, t, 2.0);
+        t++; requestAnimationFrame(loop);
+      })();
+    }
+    window.addEventListener('load', ()=>{
+      if (window.DSChars){ drawHero('art-darcy','darcy'); drawHero('art-stanley','stanley'); }
+    });
+
+    let previewing = false;
+    function togglePreview(){
+      const eq = document.getElementById('eq');
+      if (!previewing){
+        DSMusic.start();
+        previewing = true;
+        eq.classList.add('on');
+        document.querySelectorAll('#previewMusic,#previewMusic2').forEach(b=>b.textContent='⏸ Stop Theme');
+      } else {
+        DSMusic.stop();
+        previewing = false;
+        eq.classList.remove('on');
+        document.getElementById('previewMusic').textContent='🎧 Hear the Theme';
+        document.getElementById('previewMusic2').textContent='🎧 Play Theme Snippet';
+      }
+    }
+    document.getElementById('previewMusic').addEventListener('click', togglePreview);
+    document.getElementById('previewMusic2').addEventListener('click', togglePreview);
+  </script>
+  <script src="js/chars.js"></script>
+</body>
+</html>

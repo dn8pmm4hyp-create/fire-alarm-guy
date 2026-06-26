@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#05030c" />
+<title>Darcy &amp; Stanley — Play</title>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;background:#05030c;font-family:'Space Grotesk',sans-serif;color:#fff;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  #game{background:#05030c;image-rendering:auto;width:100%;height:100%;object-fit:contain;display:block}
+  /* HUD */
+  #hud{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:12px 16px;pointer-events:none;z-index:5;font-family:'Russo One',sans-serif}
+  .hud-left,.hud-right{display:flex;flex-direction:column;gap:6px}
+  .hud-right{align-items:flex-end}
+  .badge{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);padding:5px 12px;border-radius:20px;font-size:13px;letter-spacing:1px;backdrop-filter:blur(4px)}
+  .hpbar{width:170px;height:16px;border-radius:10px;background:rgba(255,255,255,.12);overflow:hidden;border:1px solid rgba(255,255,255,.25)}
+  .hpfill{height:100%;width:100%;background:linear-gradient(90deg,#ff2e88,#ffe600);transition:width .2s}
+  .who{font-size:12px;opacity:.85}
+  /* center messages / overlays */
+  .overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(circle at 50% 40%,rgba(122,47,247,.35),rgba(5,3,12,.92))}
+  .overlay.hidden{display:none}
+  .overlay h1{font-family:'Bungee',cursive;font-size:clamp(34px,8vw,84px);line-height:1}
+  .o-pink{color:#ff2e88;text-shadow:0 0 24px #ff2e88}
+  .o-cyan{color:#00f0ff;text-shadow:0 0 24px #00f0ff}
+  .overlay p{margin:16px 0;max-width:560px;opacity:.92;line-height:1.55;font-size:16px}
+  .keyrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0 22px}
+  .key{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:8px 12px;font-size:13px}
+  .key b{color:#ffe600}
+  .btn{font-family:'Russo One',sans-serif;font-size:20px;letter-spacing:1px;color:#05030c;background:linear-gradient(135deg,#00f0ff,#7af);border:none;border-radius:14px;padding:16px 38px;cursor:pointer;box-shadow:0 7px 0 #066;transition:.1s;pointer-events:auto}
+  .btn:active{transform:translateY(4px);box-shadow:0 3px 0 #066}
+  .btn.pink{background:linear-gradient(135deg,#ff2e88,#ff7ab5);box-shadow:0 7px 0 #7a0a3e}
+  .btn-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  .toplink{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:6}
+  .pickrow{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin:18px 0}
+  .pick{cursor:pointer;border-radius:18px;padding:18px;width:200px;background:rgba(20,10,38,.7);border:2px solid transparent;transition:.15s}
+  .pick:hover{transform:translateY(-4px)}
+  .pick.darcy{border-color:#ff2e88}
+  .pick.stanley{border-color:#00f0ff}
+  .pick canvas{display:block;margin:0 auto}
+  .pick h3{font-family:'Bungee',cursive;margin-top:8px}
+  .pick.darcy h3{color:#ff2e88}.pick.stanley h3{color:#00f0ff}
+  .pick small{opacity:.8}
+  /* touch controls — anchored to safe-area so they clear the notch/home bar */
+  #touch{position:fixed;inset:0;z-index:4;display:none;pointer-events:none}
+  .tc{position:absolute;pointer-events:auto;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);border-radius:50%;width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;backdrop-filter:blur(3px);
+       --sb:calc(env(safe-area-inset-bottom,0px));--sl:calc(env(safe-area-inset-left,0px));--sr:calc(env(safe-area-inset-right,0px))}
+  .tc:active{background:rgba(255,255,255,.34)}
+  #tc-left{left:calc(16px + var(--sl));bottom:calc(96px + var(--sb))}
+  #tc-right{left:calc(96px + var(--sl));bottom:calc(96px + var(--sb))}
+  #tc-jump{right:calc(100px + var(--sr));bottom:calc(96px + var(--sb))}
+  #tc-attack{right:calc(16px + var(--sr));bottom:calc(34px + var(--sb));width:92px;height:92px;background:rgba(255,46,136,.32);border-color:#ff2e88}
+  #tc-weapon{right:calc(116px + var(--sr));bottom:calc(24px + var(--sb));width:62px;height:62px;background:rgba(255,230,0,.26);border-color:#ffe600}
+  #tc-switch{right:calc(16px + var(--sr));bottom:calc(140px + var(--sb));width:58px;height:58px;font-size:18px}
+  body.touch #touch{display:block}
+  .mutebtn{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:6;pointer-events:auto;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:20px;padding:8px 14px;font-size:13px;cursor:pointer}
+  /* rotate-to-landscape nudge for phones held in portrait */
+  #rotate{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;background:radial-gradient(circle at 50% 40%,#2a1050,#05030c);padding:30px}
+  #rotate .ph{font-size:72px;animation:rot 1.6s ease-in-out infinite}
+  #rotate h2{font-family:'Bungee',cursive;color:#00f0ff;font-size:24px}
+  #rotate p{opacity:.85;max-width:320px;line-height:1.5}
+  @keyframes rot{0%,40%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+  @media (orientation:portrait) and (pointer:coarse){ body.playing #rotate{display:flex} }
+</style>
+</head>
+<body>
+  <div id="stage"><canvas id="game" width="960" height="540"></canvas></div>
+
+  <!-- shown on phones held in portrait while playing -->
+  <div id="rotate">
+    <div class="ph">📱</div>
+    <h2>ROTATE YOUR DEVICE</h2>
+    <p>Darcy &amp; Stanley plays best in landscape. Turn your phone sideways to brawl!</p>
+  </div>
+
+  <div id="hud" style="display:none">
+    <div class="hud-left">
+      <div class="badge" id="levelBadge">LEVEL 1</div>
+      <div class="hpbar"><div class="hpfill" id="hpfill"></div></div>
+      <div class="who" id="whoLabel">DARCY · gymnast</div>
+      <div class="badge" id="wpnBadge" style="font-size:12px">⚔ STAR BATON ✦ READY</div>
+    </div>
+    <div class="hud-right">
+      <div class="badge" id="scoreBadge">SCORE 0</div>
+      <div class="badge" id="enemyBadge">ENEMIES 0</div>
+    </div>
+  </div>
+  <button class="mutebtn" id="muteBtn" style="display:none">🔊 Sound</button>
+
+  <!-- START / CHARACTER SELECT -->
+  <div class="overlay" id="startOverlay">
+    <h1><span class="o-pink">DARCY</span> <span style="color:#ffe600">&amp;</span> <span class="o-cyan">STANLEY</span></h1>
+    <p>Pick your fighter. Switch between them any time with <b>Q</b>. Beat all 3 levels — streets, highway, and deep space.</p>
+    <div class="pickrow">
+      <div class="pick darcy" data-pick="darcy"><canvas width="120" height="150"></canvas><h3>DARCY</h3><small>Gymnast · spin-kick combos</small></div>
+      <div class="pick stanley" data-pick="stanley"><canvas width="120" height="150"></canvas><h3>STANLEY</h3><small>Footballer · ranged shots</small></div>
+    </div>
+    <div class="keyrow">
+      <span class="key"><b>← →</b> / A D move</span>
+      <span class="key"><b>↑</b> / W / Space jump</span>
+      <span class="key"><b>J</b> / F attack</span>
+      <span class="key"><b>K</b> / L weapon</span>
+      <span class="key"><b>Q</b> switch hero</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn pink" id="startBtn">START GAME ▶</button>
+      <a class="btn" href="index.html" style="text-decoration:none;display:inline-block">← Home</a>
+    </div>
+  </div>
+
+  <!-- LEVEL INTRO -->
+  <div class="overlay hidden" id="introOverlay">
+    <h1 id="introTitle" class="o-cyan">LEVEL 1</h1>
+    <p id="introText"></p>
+    <button class="btn" id="introBtn">GO! ▶</button>
+  </div>
+
+  <!-- WIN / LOSE -->
+  <div class="overlay hidden" id="endOverlay">
+    <h1 id="endTitle" class="o-pink">GAME OVER</h1>
+    <p id="endText"></p>
+    <div class="btn-row">
+      <button class="btn pink" id="retryBtn">PLAY AGAIN ▶</button>
+      <a class="btn" href="index.html" style="text-decoration:none;display:inline-block">← Home</a>
+    </div>
+  </div>
+
+  <!-- touch controls -->
+  <div id="touch">
+    <div class="tc" id="tc-left">◀</div>
+    <div class="tc" id="tc-right">▶</div>
+    <div class="tc" id="tc-jump">▲</div>
+    <div class="tc" id="tc-switch">Q</div>
+    <div class="tc" id="tc-weapon">⚔</div>
+    <div class="tc" id="tc-attack">⚡</div>
+  </div>
+
+  <script src="js/chars.js"></script>
+  <script src="js/music.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
