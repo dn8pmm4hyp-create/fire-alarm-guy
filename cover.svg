@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="1200" height="1200" font-family="Menlo, Consolas, monospace">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16244a"/>
+      <stop offset="1" stop-color="#080d1d"/>
+    </linearGradient>
+    <radialGradient id="drop" cx="0.4" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#bff0ff"/>
+      <stop offset="0.5" stop-color="#49b9e8"/>
+      <stop offset="1" stop-color="#1d6fa6"/>
+    </radialGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="1200" fill="url(#bg)"/>
+
+  <!-- poster content band, centered vertically (285..915) -->
+  <g transform="translate(0,285)">
+    <g fill="#22305c" opacity="0.28">
+      <rect x="70"  y="60" width="46" height="510"/>
+      <rect x="300" y="60" width="46" height="510"/>
+      <rect x="880" y="60" width="46" height="510"/>
+      <rect x="1090" y="60" width="46" height="510"/>
+    </g>
+    <rect x="0" y="500" width="1200" height="130" fill="#2c3d72"/>
+    <rect x="0" y="500" width="1200" height="8" fill="#46599b"/>
+
+    <g fill="#ff4d3d">
+      <path d="M60 52 a9 9 0 0 1 18 0 a9 9 0 0 1 18 0 q0 13 -18 24 q-18 -11 -18 -24z"/>
+      <path d="M108 52 a9 9 0 0 1 18 0 a9 9 0 0 1 18 0 q0 13 -18 24 q-18 -11 -18 -24z"/>
+      <path d="M156 52 a9 9 0 0 1 18 0 a9 9 0 0 1 18 0 q0 13 -18 24 q-18 -11 -18 -24z"/>
+    </g>
+
+    <text x="600" y="170" text-anchor="middle" font-size="88" font-weight="bold"
+          fill="#ff4d3d" filter="url(#glow)" letter-spacing="3">FIRE ALARM GUY</text>
+    <text x="600" y="222" text-anchor="middle" font-size="25" fill="#ffcf3d">
+          Fix the faults · fight the builders &amp; plumbers · beat The Water Drop</text>
+
+    <!-- engineer -->
+    <g transform="translate(150,255) scale(6)">
+      <rect x="5" y="30" width="8" height="12" fill="#26407a"/>
+      <rect x="17" y="30" width="8" height="12" fill="#26407a"/>
+      <rect x="3" y="12" width="24" height="20" fill="#ff7a1a"/>
+      <rect x="3" y="18" width="24" height="3" fill="#ffe27a"/>
+      <rect x="3" y="24" width="24" height="3" fill="#ffe27a"/>
+      <rect x="8" y="0" width="14" height="13" fill="#f1c79b"/>
+      <rect x="5" y="-3" width="20" height="6" fill="#e23b2e"/>
+      <rect x="8" y="-6" width="14" height="4" fill="#e23b2e"/>
+      <rect x="17" y="5" width="3" height="3" fill="#222"/>
+    </g>
+
+    <!-- fault panel -->
+    <g transform="translate(470,430)">
+      <rect width="44" height="48" fill="#1a2240" stroke="#3a4a82" stroke-width="2"/>
+      <circle cx="22" cy="17" r="8" fill="#ff4d3d"/>
+      <circle cx="22" cy="17" r="15" fill="#ff4d3d" opacity="0.3"/>
+      <text x="22" y="42" text-anchor="middle" font-size="9" fill="#ffcf3d">FAULT</text>
+    </g>
+
+    <!-- The Water Drop boss -->
+    <g transform="translate(0,-20)">
+      <path d="M940 215 C1055 335 1045 480 940 480 C835 480 825 335 940 215 Z" fill="url(#drop)"/>
+      <ellipse cx="916" cy="345" rx="13" ry="26" fill="#ffffff" opacity="0.5"/>
+      <rect x="892" y="330" width="30" height="14" fill="#06222e"/>
+      <rect x="958" y="330" width="30" height="14" fill="#06222e"/>
+      <rect x="898" y="332" width="8" height="8" fill="#fff"/>
+      <rect x="964" y="332" width="8" height="8" fill="#fff"/>
+      <path d="M888 318 L924 330 M992 318 L956 330" stroke="#06222e" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M912 410 Q940 388 968 410" stroke="#06222e" stroke-width="6" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <rect x="370" y="566" width="460" height="44" rx="10" fill="#4dff88"/>
+    <text x="600" y="595" text-anchor="middle" font-size="22" font-weight="bold" fill="#0a1020">
+          ▶  PLAY FREE IN YOUR BROWSER</text>
+  </g>
+</svg>
