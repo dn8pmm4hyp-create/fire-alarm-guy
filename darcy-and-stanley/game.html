@@ -23,8 +23,19 @@
   .hpfill{height:100%;width:100%;background:linear-gradient(90deg,#ff2e88,#ffe600);transition:width .2s}
   .who{font-size:12px;opacity:.85}
   /* center messages / overlays */
-  .overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(circle at 50% 40%,rgba(122,47,247,.35),rgba(5,3,12,.92))}
+  .overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:safe center;text-align:center;padding:24px;background:radial-gradient(circle at 50% 40%,rgba(122,47,247,.35),rgba(5,3,12,.92));
+           overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
   .overlay.hidden{display:none}
+  /* compact the character-select on short (landscape phone) screens so START stays reachable */
+  @media (max-height:560px){
+    .overlay{padding:14px}
+    .overlay h1{font-size:clamp(26px,7vw,48px)}
+    .overlay p{margin:8px 0;font-size:14px}
+    .pickrow{gap:12px;margin:10px 0}
+    .pick{width:150px;padding:12px}
+    .pick canvas{width:84px;height:108px}
+    .keyrow{margin:6px 0 12px}
+  }
   .overlay h1{font-family:'Bungee',cursive;font-size:clamp(34px,8vw,84px);line-height:1}
   .o-pink{color:#ff2e88;text-shadow:0 0 24px #ff2e88}
   .o-cyan{color:#00f0ff;text-shadow:0 0 24px #00f0ff}
