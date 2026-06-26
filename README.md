@@ -6,7 +6,7 @@ electricians**, and finally facing the boss of all alarm enemies — **The Water
 
 ![Fire Alarm Guy](cover.png)
 
-**▶ [Play it](#) — once hosted, paste your link here.**
+**▶ [Play it](https://dn8pmm4hyp-create.github.io/fire-alarm-guy/)**
 
 ## One-click apps (macOS)
 
