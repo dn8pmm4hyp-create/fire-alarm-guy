@@ -274,10 +274,16 @@ function pickVoice(){
             || vs.find(v=>/^en/i.test(v.lang)) || vs[0] || null;
 }
 if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+// In-game PA announcements (alternate each time the PA fires)
+const PA_LINES = [
+  "Attention please. Due to a reported emergency, please evacuate the station immediately.",
+  "Would Inspector Sands please come to the operations room immediately."
+];
+let paIndex = 0;
 function sayPA(){
   if (muted || !("speechSynthesis" in window)) return;
-  const u = new SpeechSynthesisUtterance(
-    "Attention please. Due to a reported emergency, please evacuate the station immediately.");
+  const u = new SpeechSynthesisUtterance(PA_LINES[paIndex % PA_LINES.length]);
+  paIndex++;
   if (paVoice) u.voice = paVoice;
   u.rate = 0.92; u.pitch = 0.9; u.volume = 1;
   u.onstart = () => { paSpeaking = true; };
