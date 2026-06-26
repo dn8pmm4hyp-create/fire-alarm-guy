@@ -8,6 +8,18 @@ electricians**, and finally facing the boss of all alarm enemies — **The Water
 
 **▶ [Play it](#) — once hosted, paste your link here.**
 
+## One-click apps (macOS)
+
+No terminal needed — just double-click from Finder:
+
+- **`▶ Play.command`** — opens the game in your browser.
+- **`🔗 Share.command`** — publishes the game to GitHub Pages and copies a shareable
+  link to your clipboard. The first time, it signs you into GitHub and creates the repo;
+  every run after that just uploads your latest version. (Requires the `gh` CLI.)
+
+> First launch: macOS may ask permission for Terminal to run the script — click **OK**.
+> If a `.command` won't open, right-click it → **Open** once to approve it.
+
 ## How to play
 
 | Key | Action |
