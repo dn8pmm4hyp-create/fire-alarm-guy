@@ -62,10 +62,12 @@
   function curve(amt){ const n=256,c=new Float32Array(n); for(let i=0;i<n;i++){const x=i/n*2-1; c[i]=(Math.PI+amt)*x/(Math.PI+amt*Math.abs(x));} return c; }
 
   // ---- render the full loop into a buffer (once) ----
+  const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
   function buildLoop(){
     if(bufferCache) return Promise.resolve(bufferCache);
+    if(!OAC) return Promise.reject();
     const len = Math.round(TOTAL*STEP*SR);          // exact loop length = seamless
-    const oac = new OfflineAudioContext(2, len, SR);
+    const oac = new OAC(2, len, SR);
     const comp = oac.createDynamicsCompressor();
     const bus = oac.createGain(); bus.gain.value=1; bus.connect(comp).connect(oac.destination);
     for(let step=0; step<TOTAL; step++){
@@ -80,26 +82,56 @@
     return oac.startRendering().then(b=>{ bufferCache=b; return b; });
   }
 
+  // --- iOS audio unlock helpers ---
+  // 1) play a 1-sample buffer through the context inside the user gesture
+  // 2) loop a silent <audio> element to flip the iOS audio session to "playback",
+  //    so Web Audio is heard even with the ring/silent switch on.
+  let silentEl=null;
+  function makeSilentEl(){
+    if(silentEl) return silentEl;
+    try{
+      const sr=8000, n=Math.floor(sr*0.4);
+      const ab=new ArrayBuffer(44+n*2), v=new DataView(ab);
+      const w=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+      w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt ');
+      v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+      v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+      w(36,'data'); v.setUint32(40,n*2,true);            // samples left at 0 = silence
+      silentEl=new Audio(URL.createObjectURL(new Blob([ab],{type:'audio/wav'})));
+      silentEl.loop=true; silentEl.volume=1; silentEl.setAttribute('playsinline','');
+    }catch(e){}
+    return silentEl;
+  }
+  function unlock(){
+    try{ if(ctx.state==='suspended') ctx.resume(); }catch(e){}
+    try{ const b=ctx.createBuffer(1,1,ctx.sampleRate); const s=ctx.createBufferSource(); s.buffer=b; s.connect(ctx.destination); s.start(0); }catch(e){}
+    try{ const el=makeSilentEl(); if(el){ const p=el.play(); if(p&&p.catch) p.catch(()=>{}); } }catch(e){}
+  }
+
   function start(){
     if(started) return; started=true;
     ctx = new (window.AudioContext||window.webkitAudioContext)();
     master = ctx.createGain(); master.gain.value=0;
     master.connect(ctx.destination);
-    if(ctx.state==='suspended') ctx.resume().catch(()=>{});
-    buildLoop().then(buf=>{
-      if(!started || !ctx) return;                  // stopped before render finished
+    unlock();                                         // MUST run inside the user gesture (iOS)
+    const play = (buf)=>{
+      if(!started || !ctx) return;                    // stopped before render finished
+      try{ ctx.resume(); }catch(e){}
       src = ctx.createBufferSource(); src.buffer=buf; src.loop=true;
       src.connect(master); src.start();
       const now=ctx.currentTime;
       master.gain.cancelScheduledValues(now);
-      master.gain.setValueAtTime(0,now);
+      master.gain.setValueAtTime(0.0001,now);
       master.gain.linearRampToValueAtTime(0.32, now+0.5);  // fade in
-    }).catch(()=>{});
+    };
+    if(bufferCache) play(bufferCache);                // play instantly when pre-rendered
+    else buildLoop().then(play).catch(()=>{});
   }
   function stop(){
     if(!started) return; started=false;
     const c=ctx, s=src;
     if(c && master){ const now=c.currentTime; master.gain.cancelScheduledValues(now); master.gain.linearRampToValueAtTime(0, now+0.25); }
+    try{ if(silentEl) silentEl.pause(); }catch(e){}
     setTimeout(()=>{ try{ if(s) s.stop(); }catch(e){} try{ if(c) c.close(); }catch(e){} }, 320);
     src=null; ctx=null; master=null;
   }
@@ -108,4 +140,7 @@
   function setVolume(v){ if(started && master) master.gain.value=v; }
 
   window.DSMusic = { start, stop, toggle, isOn, setVolume };
+
+  // pre-render the loop on load (no gesture needed) so start() can play instantly
+  try{ buildLoop().catch(()=>{}); }catch(e){}
 })();

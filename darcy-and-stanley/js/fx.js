@@ -47,5 +47,15 @@
   function setEnabled(v){ enabled = !!v; if(!v && SUPPORTED) speechSynthesis.cancel(); }
   function isEnabled(){ return enabled; }
 
-  window.DSFx = { shout, setEnabled, isEnabled };
+  // iOS requires the first speak() to happen inside a user gesture — prime it silently.
+  function unlock(){
+    if(!SUPPORTED) return;
+    try{
+      pickVoice();
+      const u=new SpeechSynthesisUtterance(' '); u.volume=0;
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  window.DSFx = { shout, setEnabled, isEnabled, unlock };
 })();

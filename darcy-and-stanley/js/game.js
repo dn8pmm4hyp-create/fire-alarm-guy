@@ -111,7 +111,7 @@ document.querySelectorAll('.pick').forEach(p=>{
   p.addEventListener('click',()=>{ G.hero=k; document.querySelectorAll('.pick').forEach(z=>z.style.opacity=.5); p.style.opacity=1; });
 });
 
-el('startBtn').onclick = ()=>{ DSMusic.start(); if(window.DSFx) DSFx.setEnabled(true); muteBtn.style.display='block'; muteBtn.textContent='🔊 Sound'; startGame(); };
+el('startBtn').onclick = ()=>{ DSMusic.start(); if(window.DSFx){ DSFx.setEnabled(true); DSFx.unlock(); } muteBtn.style.display='block'; muteBtn.textContent='🔊 Sound'; startGame(); };
 el('introBtn').onclick = ()=>{ introOverlay.classList.add('hidden'); G.mode='playing'; document.body.classList.add('playing'); };
 el('retryBtn').onclick = ()=>{ endOverlay.classList.add('hidden'); startGame(); };
 muteBtn.onclick = ()=>{ const on=DSMusic.toggle(); if(window.DSFx) DSFx.setEnabled(on); muteBtn.textContent = on?'🔊 Sound':'🔇 Muted'; };
