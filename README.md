@@ -32,7 +32,11 @@ No terminal needed — just double-click from Finder:
 | E | Fix a fault while standing on the panel |
 | P | Pause &nbsp;·&nbsp; M | Mute &nbsp;·&nbsp; Enter | Start / restart |
 
-On phones, on-screen touch controls appear automatically.
+On phones, on-screen touch controls appear automatically. **iPhone sound:** tap once to
+start (iOS requires a tap before audio), flip the side **Ring/Silent switch up**, and turn
+the volume up — then you'll hear the alarm sounder, PA announcement, music and effects.
+Turn the phone **sideways (landscape)** for the best, full-screen view. Add it to your Home
+Screen for a fullscreen, app-like experience.
 
 **Goal:** Each floor's exit stays **locked** until you fix every blinking **FAULT** panel.
 Fix them all, reach the exit, and on the final floor — defeat The Water Drop, which

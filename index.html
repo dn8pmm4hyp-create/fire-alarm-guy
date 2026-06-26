@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fire Alarm Guy">
 <title>Fire Alarm Guy — a browser platformer</title>
 <meta name="description" content="Play as a fire alarm engineer: fix faults, bonk builders, plumbers, painters & electricians, then defeat The Water Drop. A free browser platformer.">
 <meta name="theme-color" content="#0b1020">
@@ -46,12 +50,35 @@
   footer { font-size:10px; color:#5a6a8a; text-align:center; margin-top:2px; }
   footer a { color:#8ea0d8; }
   /* mobile controls */
-  #touch { display:none; position:fixed; inset:0; pointer-events:none; z-index:5; }
-  #touch .pad { position:absolute; pointer-events:auto; user-select:none;
-    width:62px; height:62px; border-radius:50%; background:rgba(40,55,107,.55);
-    border:2px solid rgba(160,180,255,.5); color:#e8ecff; font-size:22px;
-    display:flex; align-items:center; justify-content:center; }
-  #touch .pad:active { background:rgba(77,255,136,.4); }
+  #touch { display:none; position:fixed; inset:0; pointer-events:none; z-index:5;
+    box-sizing:border-box;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  #touch .pad { position:absolute; pointer-events:auto; user-select:none; -webkit-user-select:none;
+    width:64px; height:64px; border-radius:50%; background:rgba(40,55,107,.5);
+    border:2px solid rgba(160,180,255,.5); color:#e8ecff; font-size:23px;
+    display:flex; align-items:center; justify-content:center; touch-action:none; }
+  #touch .pad:active { background:rgba(77,255,136,.45); transform:scale(.94); }
+  #rotate { display:none; }
+  /* phones / small screens: maximize the play area, hide desktop chrome */
+  @media (max-width:860px), (pointer:coarse) {
+    #wrap { justify-content:flex-start; gap:4px; height:100dvh;
+      padding-top:env(safe-area-inset-top); }
+    h1 { font-size:13px; letter-spacing:1px; margin-top:2px; }
+    #game { max-width:100vw; max-height:78dvh; width:100vw; border-radius:0; border-width:0 0 2px 0; }
+    #hint, footer { display:none; }
+    #err { font-size:11px; }
+    #startBtn { font-size:14px; padding:8px 22px; }
+    #shareBtn { font-size:12px; }
+    #rotate { display:block; position:fixed; left:0; right:0; bottom:0; z-index:9;
+      text-align:center; font-size:12px; color:#cfe0ff; background:rgba(8,12,26,.92);
+      padding:10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  }
+  /* in landscape on a phone, the controls + canvas are enough — drop the banner */
+  @media (pointer:coarse) and (orientation:landscape) {
+    #rotate { display:none !important; }
+    h1, #bar, #err { display:none; }
+    #game { max-height:100dvh; }
+  }
 </style>
 </head>
 <body>
@@ -71,6 +98,7 @@
   </div>
   <footer>Made for fun · plays in any modern browser, desktop or mobile · click the game to start</footer>
 </div>
+<div id="rotate">↻ Turn your phone sideways for a bigger view · tap to start &nbsp;🔊 flip the side switch up for sound</div>
 <div id="touch">
   <div class="pad" data-k="ArrowLeft"  style="left:18px; bottom:90px;">◀</div>
   <div class="pad" data-k="ArrowRight" style="left:90px; bottom:90px;">▶</div>
@@ -127,14 +155,15 @@ if (shareBtn) shareBtn.addEventListener("click", async () => {
 });
 
 // Mobile touch buttons
+let IS_TOUCH = false;
 (function setupTouch(){
-  const isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
-  if (!isTouch) return;
+  IS_TOUCH = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+  if (!IS_TOUCH) return;
   const panel = document.getElementById("touch");
   panel.style.display = "block";
   panel.querySelectorAll(".pad").forEach(pad => {
     const code = pad.getAttribute("data-k");
-    const on  = e => { e.preventDefault(); keyDown(code); initAudio(); };
+    const on  = e => { e.preventDefault(); unlockAudio(); keyDown(code); gestureStart(); };
     const off = e => { e.preventDefault(); keyUp(code); };
     pad.addEventListener("pointerdown", on);
     pad.addEventListener("pointerup", off);
@@ -262,6 +291,51 @@ function toggleMute(){
   muted = !muted;
   if (muted){ stopAlarm(); if ("speechSynthesis" in window) speechSynthesis.cancel(); }
 }
+
+/* ---- iOS / mobile audio unlock ----
+   iOS Safari starts the AudioContext suspended and blocks speech until a real
+   touch. We resume on the first gesture, play a silent buffer + a looping silent
+   <audio> element (which keeps output routed through the media channel), and
+   prime speech synthesis so the PA announcement can fire later from a timer. */
+const SILENT_WAV = "data:audio/wav;base64,UklGRoQJAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YWAJAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIA=";
+let silentEl = null, audioUnlocked = false;
+function unlockAudio(){
+  initAudio();
+  if (audioCtx && audioCtx.state === "suspended" && audioCtx.resume) audioCtx.resume();
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  // WebAudio silent buffer (classic unlock)
+  try {
+    if (audioCtx && audioCtx.createBuffer){
+      const b = audioCtx.createBuffer(1, 1, 22050);
+      const s = audioCtx.createBufferSource(); s.buffer = b;
+      s.connect(audioCtx.destination); s.start(0);
+    }
+  } catch(e){}
+  // Looping silent <audio> keeps iOS output on the media channel
+  try {
+    if (!silentEl && document.createElement){
+      silentEl = document.createElement("audio");
+      silentEl.loop = true; silentEl.preload = "auto";
+      silentEl.setAttribute("playsinline", ""); silentEl.src = SILENT_WAV;
+    }
+    if (silentEl){ const p = silentEl.play(); if (p && p.catch) p.catch(()=>{}); }
+  } catch(e){}
+  // Prime speech synthesis inside the gesture so the PA can speak from a timer later
+  try {
+    if ("speechSynthesis" in window){
+      const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u);
+    }
+  } catch(e){}
+}
+addEventListener("touchend", unlockAudio, { passive: true });
+addEventListener("pointerdown", unlockAudio, { passive: true });
+addEventListener("keydown", unlockAudio, { passive: true });
+try {
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && audioCtx && audioCtx.state === "suspended" && audioCtx.resume) audioCtx.resume();
+  });
+} catch(e){}
 
 /* ---------------- Helpers ---------------- */
 const clamp = (v,a,b) => v<a?a:v>b?b:v;
@@ -980,7 +1054,11 @@ function drawTitle(){
   ctx.fillStyle="#6fd0ff"; ctx.font="12px monospace";
   ctx.fillText("BEST SCORE: "+best, W/2, 444);
   ctx.fillStyle=(frame>>4)&1?"#4dff88":"#2a6a3a"; ctx.font="bold 18px monospace";
-  ctx.fillText("▶ Click here or press ENTER to start", W/2, 478);
+  ctx.fillText(IS_TOUCH ? "▶ TAP TO START" : "▶ Click here or press ENTER to start", W/2, 478);
+  if (IS_TOUCH){
+    ctx.fillStyle="#ffcf3d"; ctx.font="10px monospace";
+    ctx.fillText("iPhone: flip the side Ring/Silent switch UP & turn volume up for sound", W/2, 500);
+  }
   ctx.textAlign="left";
 }
 function drawEndScreen(){
@@ -1013,6 +1091,8 @@ function render(){
 /* ---------------- Loop ---------------- */
 function loop(){
   frame++;
+  // keep audio alive on mobile (iOS can suspend the context after interruptions)
+  if (state==="play" && audioCtx && audioCtx.state==="suspended" && audioCtx.resume) audioCtx.resume();
   if (consume("KeyM")) toggleMute();
   if (consume("KeyP")){
     if (state==="play"){ state="paused"; if (audioCtx) audioCtx.suspend && audioCtx.suspend(); }
