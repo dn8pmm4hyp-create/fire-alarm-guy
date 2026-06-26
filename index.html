@@ -54,10 +54,19 @@
     box-sizing:border-box;
     padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
   #touch .pad { position:absolute; pointer-events:auto; user-select:none; -webkit-user-select:none;
-    width:64px; height:64px; border-radius:50%; background:rgba(40,55,107,.5);
-    border:2px solid rgba(160,180,255,.5); color:#e8ecff; font-size:23px;
-    display:flex; align-items:center; justify-content:center; touch-action:none; }
-  #touch .pad:active { background:rgba(77,255,136,.45); transform:scale(.94); }
+    width:66px; height:66px; border-radius:50%; background:rgba(40,55,107,.5);
+    border:2px solid rgba(160,180,255,.5); color:#e8ecff;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    line-height:1; touch-action:manipulation; }
+  #touch .pad .ico { font-size:24px; }
+  #touch .pad .lbl { font-size:9px; letter-spacing:.5px; margin-top:2px; opacity:.92; font-weight:bold; }
+  #touch .pad.jump { width:84px; height:84px; background:rgba(77,255,136,.26);
+    border-color:rgba(77,255,136,.75); color:#e6fff0; }
+  #touch .pad.jump .ico { font-size:30px; }
+  #touch .pad.jump .lbl { font-size:11px; }
+  #touch .pad:active { background:rgba(77,255,136,.5); transform:scale(.94); }
+  /* stop iOS double-tap-to-zoom on tappable UI */
+  #game, #startBtn, #shareBtn, #touch .pad { touch-action:manipulation; }
   #rotate { display:none; }
   /* phones / small screens: maximize the play area, hide desktop chrome */
   @media (max-width:860px), (pointer:coarse) {
@@ -100,13 +109,13 @@
 </div>
 <div id="rotate">↻ Turn your phone sideways for a bigger view · tap to start &nbsp;🔊 flip the side switch up for sound</div>
 <div id="touch">
-  <div class="pad" data-k="ArrowLeft"  style="left:18px; bottom:90px;">◀</div>
-  <div class="pad" data-k="ArrowRight" style="left:90px; bottom:90px;">▶</div>
-  <div class="pad" data-k="KeyC"       style="left:54px; bottom:18px;">⚡</div>
-  <div class="pad" data-k="Space"      style="right:18px; bottom:30px;">⤒</div>
-  <div class="pad" data-k="KeyX"       style="right:84px; bottom:90px;">🔧</div>
-  <div class="pad" data-k="KeyZ"       style="right:18px; bottom:108px;">🪛</div>
-  <div class="pad" data-k="KeyE"       style="right:96px; bottom:18px;">✚</div>
+  <div class="pad" data-k="ArrowLeft"  style="left:18px;  bottom:84px;"><span class="ico">◀</span></div>
+  <div class="pad" data-k="ArrowRight" style="left:96px;  bottom:84px;"><span class="ico">▶</span></div>
+  <div class="pad" data-k="KeyC"       style="left:54px;  bottom:14px;"><span class="ico">⚡</span><span class="lbl">DASH</span></div>
+  <div class="pad jump" data-k="Space" style="right:16px; bottom:18px;"><span class="ico">↑</span><span class="lbl">JUMP</span></div>
+  <div class="pad" data-k="KeyX"       style="right:108px; bottom:34px;"><span class="ico">🔧</span><span class="lbl">HIT</span></div>
+  <div class="pad" data-k="KeyZ"       style="right:108px; bottom:122px;"><span class="ico">🪛</span><span class="lbl">THROW</span></div>
+  <div class="pad" data-k="KeyE"       style="right:22px;  bottom:128px;"><span class="ico">✚</span><span class="lbl">FIX</span></div>
 </div>
 <script>
 "use strict";
@@ -131,6 +140,18 @@ addEventListener("keyup", e => keyUp(e.code));
 function consume(code){ if (pressed[code]){ pressed[code] = false; return true; } return false; }
 function consumeJump(){ return consume("ArrowUp") || consume("Space") || consume("KeyW"); }
 function consumeDash(){ return consume("KeyC") || consume("ShiftLeft") || consume("ShiftRight"); }
+
+// Stop iOS double-tap-to-zoom (which gets stuck because pinch-out is disabled).
+let lastTouchEnd = 0;
+document.addEventListener("touchend", e => {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 350) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+// Block pinch / gesture zoom entirely (Safari-specific events)
+["gesturestart","gesturechange","gestureend"].forEach(ev =>
+  document.addEventListener(ev, e => e.preventDefault()));
+document.addEventListener("dblclick", e => e.preventDefault());
 
 cv.setAttribute("tabindex", "0"); cv.style.outline = "none";
 function gestureStart(){
