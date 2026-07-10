@@ -22,7 +22,22 @@ FireMate/
 
 ## Building
 
-There is no `.xcodeproj` checked in — create one and drop the sources in:
+Requires a Mac with Xcode 15+ (iOS apps can only be built on macOS).
+
+### Option A — XcodeGen (one command)
+
+```sh
+brew install xcodegen        # once
+cd FireMate
+xcodegen generate
+open FireMate.xcodeproj
+```
+
+`project.yml` sets the iOS 17 deployment target and the microphone /
+speech-recognition privacy keys the voice assistant needs. Press **⌘R** to run
+in the iOS Simulator.
+
+### Option B — manual Xcode project
 
 1. Xcode → **File → New → Project → iOS App**, name it `FireMate`,
    interface **SwiftUI**, language **Swift** (iOS 17+ deployment target).
@@ -33,6 +48,17 @@ There is no `.xcodeproj` checked in — create one and drop the sources in:
    - `NSMicrophoneUsageDescription` — "FireMate uses the microphone for voice questions."
    - `NSSpeechRecognitionUsageDescription` — "FireMate transcribes your voice questions."
 4. Build & run.
+
+### Running on your iPhone (free, no paid developer account)
+
+1. Plug the phone in (or pair over Wi-Fi) and select it as the run destination.
+2. In **Signing & Capabilities**, choose your personal Apple ID team and let
+   Xcode manage signing (change the bundle ID if it collides).
+3. Press **⌘R**. First launch: on the phone, go to
+   **Settings → General → VPN & Device Management** and trust your developer
+   certificate. Personal-team builds expire after 7 days — re-run from Xcode
+   to refresh, or use TestFlight with a paid developer account for
+   longer-lived installs.
 
 ## Cloud assistant
 
